@@ -1,0 +1,10 @@
+﻿Planet,Equatorial Radius (km),Mean Radius (km),Mass (x 1024 kg),Bulk Density (g cm-3),Sidereal Rotation Period (d),Sidereal Orbit Period (y),"V(1,0) (mag)",Geometric Albedo,Equatorial Gravity (m s-2),Escape Velocity (km s-1),Texture File
+Mercury,2440.53,2439.4,0.330114,5.4291,58.6462,0.2408467,-0.6,0.106,3.7,4.25,Data\\2k_mercury.jpg
+Venus,6051.8,6051.8,4.86747,5.243,-243.018,0.61519726,-4.47,0.65,8.87,10.36,Data\\2k_mercury.jpg
+Earth,6378.1366,6371.0084,5.97237,5.5136,0.99726968,1.0000174,-3.86,0.367,9.8,11.19,Data\\2k_mercury.jpg
+Mars,3396.19,3389.5,0.641712,3.9341,1.02595676,1.8808476,-1.52,0.15,3.71,5.03,Data\\2k_mercury.jpg
+Jupiter,71492,69911,1898.187,1.3262,0.41354,11.862615,-9.4,0.52,24.79,60.2,Data\\2k_mercury.jpg
+Saturn,60268,58232,568.3174,0.6871,0.44401,29.447498,-8.88,0.47,10.44,36.09,Data\\2k_mercury.jpg
+Uranus,25559,25362,86.8127,1.27,-0.71833,84.016846,-7.19,0.51,8.87,21.38,Data\\2k_mercury.jpg
+Neptune,24764,24622,102.4126,1.638,0.67125,164.79132,-6.87,0.41,11.15,23.56,Data\\2k_mercury.jpg
+Pluto,1188.3,1188.3,0.01303,1.89,-6.3872,247.92065,-1,0.3,0.62,1.21,Data\\2k_mercury.jpg

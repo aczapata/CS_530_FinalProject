@@ -31,6 +31,15 @@ import colorbar
 from pathlib import Path, PureWindowsPath
 
 frame_counter = 0
+class Planet():
+	def __init__(self, array):
+		self.name = array[0]
+		self.equatorial_radius = array[1]
+		self.mean_radius = array[2]
+		self.texture_file = "Data\\2k_mercury.jpg"
+		#self.texture_file = str(array[11])
+		print(self.texture_file)
+		
 
 class MySphere(VTKPythonAlgorithmBase):
 	def __init__(self):
@@ -42,6 +51,7 @@ class MySphere(VTKPythonAlgorithmBase):
 		self.center = [ 0, 0, 0]
 		self.radius = 1
 		self.modified = True
+		self.name = ""
 
 	def ComputeLatitude(self):
 		coords = vtk.util.numpy_support.vtk_to_numpy(self.sphere.GetPoints().GetData())
@@ -78,12 +88,12 @@ class MySphere(VTKPythonAlgorithmBase):
 		self.Modified()
 
 	def RequestData(self, request, inInfo, outInfo):
-		print('Executing')
+		#print('Executing')
 		output = vtk.vtkPolyData.GetData(outInfo)
 		self.Update()
 		output.ShallowCopy(self.sphere)
 
-		print('output\n{}'.format(output))
+		#print('output\n{}'.format(output))
 
 		return 1
 
@@ -125,8 +135,8 @@ def make_sphere(imageFile, radius):
 
 	reader = vtk.vtkJPEGReader()
 	reader.SetFileName(imageFile)
-	reader.Update()
-	print(reader)
+	#reader.Update()
+	#print(reader)
 
 	texture = vtk.vtkTexture()
 	texture.SetInputConnection(reader.GetOutputPort())
@@ -213,8 +223,14 @@ class PyQtDemo(QMainWindow):
 		self.ui = Ui_MainWindow()
 		self.ui.setupUi(self)
 
-		sphere_actor = make_sphere(imageFile, 0)
+		# Create the Renderer
+		self.ren = vtk.vtkRenderer()
 
+		planets_file = open("Data/planets_physical_characteristics.csv", "r")
+		for p in planets_file.readlines()[1:]:
+			planet = Planet(p.split(","))
+			sphere_actor = make_sphere(planet.texture_file, planet.equatorial_radius)
+			self.ren.AddActor(sphere_actor)
 		
 
 		'''
@@ -235,9 +251,8 @@ class PyQtDemo(QMainWindow):
 
 
 
-		# Create the Renderer
-		self.ren = vtk.vtkRenderer()
-		self.ren.AddActor(sphere_actor)
+		
+		
 		#self.ren.AddActor(actor)
 		#self.ren.AddActor2D(bar.get())
 		
@@ -291,10 +306,10 @@ class PyQtDemo(QMainWindow):
 if __name__=="__main__":
 
 	#elevationFile = sys.argv[1]
-	#imageFile = sys.argv[2]
-	imageFilePath = "Data\\world.topo.bathy.200408.medium.jpg"
-	imageFile = Path(PureWindowsPath(imageFilePath)).absolute().as_uri()
-	imageFile = imageFile[8:]
+	imageFile = "Data\\2k_mercury.jpg"
+	# imageFilePath = "Data\\world.topo.bathy.200408.medium.jpg"
+	# imageFile = Path(PureWindowsPath(imageFilePath)).absolute().as_uri()
+	# imageFile = imageFile[8:]
 	print("imageFile: ",imageFile)
 
 	'''
