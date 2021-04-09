@@ -28,6 +28,7 @@ import sys
 from vtk.util.vtkAlgorithm import VTKPythonAlgorithmBase
 import vtk.util.numpy_support
 import colorbar
+from pathlib import Path, PureWindowsPath
 
 frame_counter = 0
 
@@ -189,47 +190,18 @@ class PyQtDemo(QMainWindow):
 		self.ui = Ui_MainWindow()
 		self.ui.setupUi(self)
 
-		self.scale = 0.1
-
-		'''
-		#luminance = vtk.vtkImageLuminance()
-		#luminance.SetInputConnection(reader.GetOutputPort())
-		#geometry = vtk.vtkImageDataGeometryFilter()
-		#geometry.SetInputConnection(luminance.GetOutputPort())
-		readerEle = vtk.vtkXMLPolyDataReader()
-		readerEle.SetFileName(elevationFile)
-
-		
-
-		merge = vtk.vtkMergeFilter()
-		merge.SetGeometryConnection(self.sphere.GetOutputPort())
-		merge.SetScalarsConnection(readerEle.GetOutputPort())
-		
-		self.warp = vtk.vtkWarpScalar()
-		self.warp.SetInputConnection(readerEle.GetOutputPort())
-		#self.warp.XYPlaneOn()
-		#self.warp.UseNormalOn()
-		#self.warp.SetNormal(0,0,1)
-		#self.warp.SetInputConnection(self.xform.GetOutputPort())
-		self.warp.SetScaleFactor(self.scale)
-
-		# Use vtkMergeFilter to combine the original image with the warped
-		# geometry.
-		#merge = vtk.vtkMergeFilter()
-		#merge.SetGeometryConnection(self.warp.GetOutputPort())
-		#merge.SetScalarsConnection(readerEle.GetOutputPort())
-		'''
-
 		self.sphere = make_sphere()
 
 		reader = vtk.vtkJPEGReader()
 		reader.SetFileName(imageFile)
+		reader.Update()
+		print(reader)
 
 		texture = vtk.vtkTexture()
 		texture.SetInputConnection(reader.GetOutputPort())
 		texture.InterpolateOn()
 		
-		mapper = vtk.vtkDataSetMapper()
+		mapper = vtk.vtkPolyDataMapper()
 		mapper.SetInputConnection(self.sphere.GetOutputPort())
 		#mapper.SetInputConnection(readerEle.GetOutputPort())
 		mapper.ScalarVisibilityOff()
@@ -239,28 +211,7 @@ class PyQtDemo(QMainWindow):
 		triang.SetMapper(mapper)
 		triang.SetTexture(texture)
 
-		
 		'''
-		contour = vtk.vtkContourFilter()
-		contour.SetInputConnection(readerEle.GetOutputPort())
-		contour.GenerateValues(18,-10000,8000)
-
-		
-		self.tubeWarp = vtk.vtkWarpScalar()
-		self.tubeWarp.SetInputConnection(contour.GetOutputPort())
-		self.tubeWarp.SetScaleFactor(self.scale)
-
-		stripper = vtk.vtkStripper()
-		stripper.SetInputConnection(self.tubeWarp.GetOutputPort())
-
-		self.tube = vtk.vtkTubeFilter()
-		self.tube.SetNumberOfSides(50)
-		self.radius = 10000
-		self.tube.SetRadius(self.radius)
-		self.tube.SetInputConnection(stripper.GetOutputPort())
-		self.tube.Update()
-		'''
-
 		ctf = vtk.vtkColorTransferFunction()
 		ctf.AddRGBPoint(-10000,0,0,1)
 		#ctf.AddRGBPoint(0.1, 1, 1, 1)
@@ -274,14 +225,6 @@ class PyQtDemo(QMainWindow):
 		bar.set_position([0.9, 0.5])
 		bar.set_size(width=80, height=300)
 		bar.set_title(title="Elevation", size=10)
-
-		'''
-		mapperTube = vtk.vtkDataSetMapper()
-		mapperTube.SetInputConnection(self.tube.GetOutputPort())
-		mapperTube.SetLookupTable(ctf)
-		actor = vtk.vtkActor()
-		actor.SetMapper(mapperTube)
-		actor.GetProperty().SetColor(1,0,0)
 		'''
 
 
@@ -290,7 +233,7 @@ class PyQtDemo(QMainWindow):
 		self.ren = vtk.vtkRenderer()
 		self.ren.AddActor(triang)
 		#self.ren.AddActor(actor)
-		self.ren.AddActor2D(bar.get())
+		#self.ren.AddActor2D(bar.get())
 		
 		self.ren.GradientBackgroundOn()  # Set gradient for background
 		self.ren.SetBackground(0.75, 0.75, 0.75)  # Set background to silver
@@ -315,11 +258,11 @@ class PyQtDemo(QMainWindow):
 			slider.setTickPosition(QSlider.TicksAbove)
 			slider.setRange(bounds[0], bounds[1])
 
-		slider_setup(self.ui.slider_theta, self.scale, [1, 255], 20)
+		slider_setup(self.ui.slider_theta, 0, [1, 255], 20)
 
 	def theta_callback(self, val):
 		self.theta = val
-		self.scale = val
+		#self.scale = val
 		self.radius = val
 		#self.sphere.SetThetaResolution(self.theta)
 		#self.sphere.SetThetaResolution(self.scale)
@@ -333,7 +276,8 @@ class PyQtDemo(QMainWindow):
 		save_frame(self.ui.vtkWidget.GetRenderWindow(), self.ui.log)
 
 	def camera_callback(self):
-		print_camera_settings(self.ren.GetActiveCamera(), self.ui.camera_info, self.ui.log)
+		print('do nothing right now')
+		#print_camera_settings(self.ren.GetActiveCamera(), self.ui.camera_info, self.ui.log)
 
 	def quit_callback(self):
 		sys.exit()
@@ -342,7 +286,10 @@ if __name__=="__main__":
 
 	#elevationFile = sys.argv[1]
 	#imageFile = sys.argv[2]
-	imageFile = "Data/world.topo.bathy.200408.medium.jpg"
+	imageFilePath = "Data\\world.topo.bathy.200408.medium.jpg"
+	imageFile = Path(PureWindowsPath(imageFilePath)).absolute().as_uri()
+	imageFile = imageFile[8:]
+	print("imageFile: ",imageFile)
 
 	'''
 	global args
