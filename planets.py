@@ -114,7 +114,8 @@ def print_camera_settings(camera, text_window, log):
 	text_window.setHtml("<div style='font-weight:bold'>Camera settings:</div><p><ul><li><div style='font-weight:bold'>Position:</div> {0}</li><li><div style='font-weight:bold'>Focal point:</div> {1}</li><li><div style='font-weight:bold'>Up vector:</div> {2}</li><li><div style='font-weight:bold'>Clipping range:</div> {3}</li></ul>".format(camera.GetPosition(), camera.GetFocalPoint(),camera.GetViewUp(),camera.GetClippingRange()))
 	log.insertPlainText('Updated camera info\n');
 
-def make_sphere():
+def make_sphere(imageFile, radius):
+	new = radius
 	# create and visualize sphere
 	sphere_source = MySphere()
 	sphere_source.SetRadius(1.0)
@@ -122,13 +123,35 @@ def make_sphere():
 	sphere_source.SetThetaResolution(100)
 	sphere_source.SetPhiResolution(100)
 
+	reader = vtk.vtkJPEGReader()
+	reader.SetFileName(imageFile)
+	reader.Update()
+	print(reader)
+
+	texture = vtk.vtkTexture()
+	texture.SetInputConnection(reader.GetOutputPort())
+	texture.InterpolateOn()
+
+	text_to_sphere = vtk.vtkTextureMapToSphere()
+	text_to_sphere.SetInputConnection(sphere_source.GetOutputPort())
+	
+	mapper = vtk.vtkPolyDataMapper()
+	mapper.SetInputConnection(text_to_sphere.GetOutputPort())
+	#mapper.SetInputConnection(readerEle.GetOutputPort())
+	mapper.ScalarVisibilityOff()
+	#mapper.SetScalarRange(-255, 255)
+
+	triang = vtk.vtkActor()
+	triang.SetMapper(mapper)
+	triang.SetTexture(texture)
+
 	# extract and visualize the edges
 	#edge_extractor = vtk.vtkExtractEdges()
 	#edge_extractor.SetInputConnection(sphere_source.GetOutputPort())
 	#edge_tubes = vtk.vtkTubeFilter()
 	#edge_tubes.SetRadius(0.001)
 	#edge_tubes.SetInputConnection(edge_extractor.GetOutputPort())
-	return sphere_source
+	return triang
 
 
 class Ui_MainWindow(object):
@@ -190,29 +213,9 @@ class PyQtDemo(QMainWindow):
 		self.ui = Ui_MainWindow()
 		self.ui.setupUi(self)
 
-		self.sphere = make_sphere()
+		sphere_actor = make_sphere(imageFile, 0)
 
-		reader = vtk.vtkJPEGReader()
-		reader.SetFileName(imageFile)
-		reader.Update()
-		print(reader)
-
-		texture = vtk.vtkTexture()
-		texture.SetInputConnection(reader.GetOutputPort())
-		texture.InterpolateOn()
-
-		text_to_sphere = vtk.vtkTextureMapToSphere()
-		text_to_sphere.SetInputConnection(self.sphere.GetOutputPort())
 		
-		mapper = vtk.vtkPolyDataMapper()
-		mapper.SetInputConnection(text_to_sphere.GetOutputPort())
-		#mapper.SetInputConnection(readerEle.GetOutputPort())
-		mapper.ScalarVisibilityOff()
-		#mapper.SetScalarRange(-255, 255)
-
-		triang = vtk.vtkActor()
-		triang.SetMapper(mapper)
-		triang.SetTexture(texture)
 
 		'''
 		ctf = vtk.vtkColorTransferFunction()
@@ -234,7 +237,7 @@ class PyQtDemo(QMainWindow):
 
 		# Create the Renderer
 		self.ren = vtk.vtkRenderer()
-		self.ren.AddActor(triang)
+		self.ren.AddActor(sphere_actor)
 		#self.ren.AddActor(actor)
 		#self.ren.AddActor2D(bar.get())
 		
