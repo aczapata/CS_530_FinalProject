@@ -34,11 +34,9 @@ frame_counter = 0
 class Planet():
 	def __init__(self, array):
 		self.name = array[0]
-		self.equatorial_radius = array[1]
-		self.mean_radius = array[2]
-		self.texture_file = "Data\\2k_mercury.jpg"
-		#self.texture_file = str(array[11])
-		print(self.texture_file)
+		self.equatorial_radius = float(array[1])
+		self.mean_radius = float(array[2])
+		self.texture_file = array[11]
 		
 
 class MySphere(VTKPythonAlgorithmBase):
@@ -128,7 +126,7 @@ def make_sphere(imageFile, radius):
 	new = radius
 	# create and visualize sphere
 	sphere_source = MySphere()
-	sphere_source.SetRadius(1.0)
+	sphere_source.SetRadius(radius)
 	sphere_source.SetCenter([0.0, 0.0, 0.0])
 	sphere_source.SetThetaResolution(100)
 	sphere_source.SetPhiResolution(100)
@@ -218,7 +216,7 @@ class Ui_MainWindow(object):
 
 class PyQtDemo(QMainWindow):
 
-	def __init__(self, imageFile, parent = None):
+	def __init__(self, parent = None):
 		QMainWindow.__init__(self, parent)
 		self.ui = Ui_MainWindow()
 		self.ui.setupUi(self)
@@ -228,7 +226,7 @@ class PyQtDemo(QMainWindow):
 
 		planets_file = open("Data/planets_physical_characteristics.csv", "r")
 		for p in planets_file.readlines()[1:]:
-			planet = Planet(p.split(","))
+			planet = Planet(p.strip("\n").split(","))
 			sphere_actor = make_sphere(planet.texture_file, planet.equatorial_radius)
 			self.ren.AddActor(sphere_actor)
 		
@@ -304,14 +302,6 @@ class PyQtDemo(QMainWindow):
 		sys.exit()
 
 if __name__=="__main__":
-
-	#elevationFile = sys.argv[1]
-	imageFile = "Data\\2k_mercury.jpg"
-	# imageFilePath = "Data\\world.topo.bathy.200408.medium.jpg"
-	# imageFile = Path(PureWindowsPath(imageFilePath)).absolute().as_uri()
-	# imageFile = imageFile[8:]
-	print("imageFile: ",imageFile)
-
 	'''
 	global args
 
@@ -325,7 +315,7 @@ if __name__=="__main__":
 	'''
 
 	app = QApplication(sys.argv)
-	window = PyQtDemo(imageFile)
+	window = PyQtDemo()
 	window.ui.vtkWidget.GetRenderWindow().SetSize(1024, 768)
 	#window.ui.log.insertPlainText('Set render window resolution to {}\n'.format(args.resolution))
 	window.show()
