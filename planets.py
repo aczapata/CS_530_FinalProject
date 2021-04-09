@@ -200,9 +200,12 @@ class PyQtDemo(QMainWindow):
 		texture = vtk.vtkTexture()
 		texture.SetInputConnection(reader.GetOutputPort())
 		texture.InterpolateOn()
+
+		text_to_sphere = vtk.vtkTextureMapToSphere()
+		text_to_sphere.SetInputConnection(self.sphere.GetOutputPort())
 		
 		mapper = vtk.vtkPolyDataMapper()
-		mapper.SetInputConnection(self.sphere.GetOutputPort())
+		mapper.SetInputConnection(text_to_sphere.GetOutputPort())
 		#mapper.SetInputConnection(readerEle.GetOutputPort())
 		mapper.ScalarVisibilityOff()
 		#mapper.SetScalarRange(-255, 255)
