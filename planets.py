@@ -142,6 +142,7 @@ def make_sphere(imageFile, radius):
 
 	text_to_sphere = vtk.vtkTextureMapToSphere()
 	text_to_sphere.SetInputConnection(sphere_source.GetOutputPort())
+	text_to_sphere.PreventSeamOff()
 	
 	mapper = vtk.vtkPolyDataMapper()
 	mapper.SetInputConnection(text_to_sphere.GetOutputPort())
