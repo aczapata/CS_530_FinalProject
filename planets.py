@@ -135,15 +135,13 @@ def make_sphere(imageFile, center, radius):
 	# create and visualize sphere
 	sphere_source = MySphere()
 	sphere_source.SetRadius(radius)
-	#sphere_source.SetCenter([random.random(), random.random(), random.random()])
 	sphere_source.SetCenter(center)
 	sphere_source.SetThetaResolution(100)
 	sphere_source.SetPhiResolution(100)
 
 	reader = vtk.vtkJPEGReader()
 	reader.SetFileName(imageFile)
-	#reader.Update()
-	#print(reader)
+	reader.Update()
 
 	texture = vtk.vtkTexture()
 	texture.SetInputConnection(reader.GetOutputPort())
@@ -155,21 +153,13 @@ def make_sphere(imageFile, center, radius):
 	
 	mapper = vtk.vtkPolyDataMapper()
 	mapper.SetInputConnection(text_to_sphere.GetOutputPort())
-	#mapper.SetInputConnection(readerEle.GetOutputPort())
 	mapper.ScalarVisibilityOff()
-	#mapper.SetScalarRange(-255, 255)
 
 	triang = vtk.vtkActor()
 	triang.SetMapper(mapper)
 	triang.SetTexture(texture)
 
-	# extract and visualize the edges
-	#edge_extractor = vtk.vtkExtractEdges()
-	#edge_extractor.SetInputConnection(sphere_source.GetOutputPort())
-	#edge_tubes = vtk.vtkTubeFilter()
-	#edge_tubes.SetRadius(0.001)
-	#edge_tubes.SetInputConnection(edge_extractor.GetOutputPort())
-	return triang
+	return triang, sphere_source
 
 
 class Ui_MainWindow(object):
@@ -189,7 +179,7 @@ class Ui_MainWindow(object):
 		# it to centralWidget.
 		self.vtkWidget = QVTKRenderWindowInteractor(self.centralWidget)
 		# Sliders
-		self.slider_theta = QSlider()
+		self.slider_radius = QSlider()
 		#self.slider_phi = QSlider()
 		#self.slider_radius = QSlider()
 		# Push buttons
@@ -212,7 +202,7 @@ class Ui_MainWindow(object):
 		# left corner and spans 3 rows and 4 columns.
 		self.gridlayout.addWidget(self.vtkWidget, 0, 0, 4, 4)
 		self.gridlayout.addWidget(QLabel("Scale"), 4, 0, 1, 1)
-		self.gridlayout.addWidget(self.slider_theta, 4, 1, 1, 1)
+		self.gridlayout.addWidget(self.slider_radius, 4, 1, 1, 1)
 		#self.gridlayout.addWidget(QLabel("Phi resolution"), 5, 0, 1, 1)
 		#self.gridlayout.addWidget(self.slider_phi, 5, 1, 1, 1)
 		#self.gridlayout.addWidget(QLabel("Edge radius"), 4, 2, 1, 1)
@@ -236,6 +226,8 @@ class PyQtDemo(QMainWindow):
 
 		planets_file = open("Data/planets_physical_characteristics.csv", "r")
 		planets_keplerian_file = open("Data/planets_keplerian_elements.csv", "r")
+		self.planet_spheres = []
+		self.planet_objs = []
 		
 		for p, k in zip(planets_file.readlines()[1:], planets_keplerian_file.readlines()[1:]):
 			print(k)
@@ -273,34 +265,13 @@ class PyQtDemo(QMainWindow):
 			actor = vtk.vtkActor()
 			actor.SetMapper(mapper)
 			self.ren.AddActor(actor)
-
-			sphere_actor = make_sphere(planet.texture_file, pos, planet.equatorial_radius*5000000)
+			print(planet.texture_file)
+			sphere_actor, sphere_source = make_sphere(planet.texture_file, pos, planet.equatorial_radius*5000000)
+			self.planet_spheres.append(sphere_source)
+			self.planet_objs.append(planet)
 			print(pos)
 			self.ren.AddActor(sphere_actor)
 
-		'''
-		ctf = vtk.vtkColorTransferFunction()
-		ctf.AddRGBPoint(-10000,0,0,1)
-		#ctf.AddRGBPoint(0.1, 1, 1, 1)
-		ctf.AddRGBPoint(0, 1, 1, 1)
-		#ctf.AddRGBPoint(-0.1, 1, 1, 1)
-		ctf.AddRGBPoint(8000, 1, 1, 0)
-	
-
-		bar = colorbar.colorbar(ctf)
-		bar.set_label(nlabels=7, size=10)
-		bar.set_position([0.9, 0.5])
-		bar.set_size(width=80, height=300)
-		bar.set_title(title="Elevation", size=10)
-		'''
-
-
-
-		
-		
-		#self.ren.AddActor(actor)
-		#self.ren.AddActor2D(bar.get())
-		
 		self.ren.GradientBackgroundOn()  # Set gradient for background
 		self.ren.SetBackground(0.75, 0.75, 0.75)  # Set background to silver
 
@@ -325,18 +296,13 @@ class PyQtDemo(QMainWindow):
 			slider.setTickPosition(QSlider.TicksAbove)
 			slider.setRange(bounds[0], bounds[1])
 
-		slider_setup(self.ui.slider_theta, 0, [1, 255], 20)
+		slider_setup(self.ui.slider_radius, 500000, [0, 10000000], 500000)
 
-	def theta_callback(self, val):
-		self.theta = val
-		#self.scale = val
-		self.radius = val
-		#self.sphere.SetThetaResolution(self.theta)
-		#self.sphere.SetThetaResolution(self.scale)
-		#self.tubeWarp.SetScaleFactor(self.scale)
-		#self.warp.SetScaleFactor(self.scale)
-		#self.ui.log.insertPlainText('Theta resolution set to {}\n'.format(self.theta))
-		self.ui.log.insertPlainText('Scale set to {}\n'.format(self.radius))
+	def radius_callback(self, val):
+		for i in range(len(self.planet_objs)):
+			#print(val)
+			self.planet_spheres[i].SetRadius(self.planet_objs[i].equatorial_radius * val)
+		self.ui.log.insertPlainText('Scale set to {}\n'.format(val))
 		self.ui.vtkWidget.GetRenderWindow().Render()
 
 	def screenshot_callback(self):
@@ -371,7 +337,7 @@ if __name__=="__main__":
 	window.iren.Initialize() # Need this line to actually show
 	# the render inside Qt
 
-	window.ui.slider_theta.valueChanged.connect(window.theta_callback)
+	window.ui.slider_radius.valueChanged.connect(window.radius_callback)
 	window.ui.push_screenshot.clicked.connect(window.screenshot_callback)
 	window.ui.push_camera.clicked.connect(window.camera_callback)
 	window.ui.push_quit.clicked.connect(window.quit_callback)
