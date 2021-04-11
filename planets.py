@@ -28,15 +28,23 @@ import sys
 from vtk.util.vtkAlgorithm import VTKPythonAlgorithmBase
 import vtk.util.numpy_support
 import colorbar
-from pathlib import Path, PureWindowsPath
+from pytwobodyorbit import TwoBodyOrbit
 
 frame_counter = 0
+sunmu = 1.32712440041e20
+
 class Planet():
-	def __init__(self, array):
-		self.name = array[0]
-		self.equatorial_radius = float(array[1])
-		self.mean_radius = float(array[2])
-		self.texture_file = array[11]
+	def __init__(self, physical_array, kepler_array):
+		self.name = physical_array[0]
+		self.equatorial_radius = float(physical_array[1])
+		self.mean_radius = float(physical_array[2])
+		self.texture_file = physical_array[11]
+		self.a = float(kepler_array[1])*1.496e11
+		self.e = float(kepler_array[2])
+		self.i = float(kepler_array[3])
+		self.l = float(kepler_array[4])
+		self.long_peri = float(kepler_array[5])
+		self.long_node = float(kepler_array[6])
 		
 
 class MySphere(VTKPythonAlgorithmBase):
@@ -122,12 +130,13 @@ def print_camera_settings(camera, text_window, log):
 	text_window.setHtml("<div style='font-weight:bold'>Camera settings:</div><p><ul><li><div style='font-weight:bold'>Position:</div> {0}</li><li><div style='font-weight:bold'>Focal point:</div> {1}</li><li><div style='font-weight:bold'>Up vector:</div> {2}</li><li><div style='font-weight:bold'>Clipping range:</div> {3}</li></ul>".format(camera.GetPosition(), camera.GetFocalPoint(),camera.GetViewUp(),camera.GetClippingRange()))
 	log.insertPlainText('Updated camera info\n');
 
-def make_sphere(imageFile, radius):
+def make_sphere(imageFile, center, radius):
 	new = radius
 	# create and visualize sphere
 	sphere_source = MySphere()
 	sphere_source.SetRadius(radius)
-	sphere_source.SetCenter([0.0, 0.0, 0.0])
+	#sphere_source.SetCenter([random.random(), random.random(), random.random()])
+	sphere_source.SetCenter(center)
 	sphere_source.SetThetaResolution(100)
 	sphere_source.SetPhiResolution(100)
 
@@ -226,11 +235,48 @@ class PyQtDemo(QMainWindow):
 		self.ren = vtk.vtkRenderer()
 
 		planets_file = open("Data/planets_physical_characteristics.csv", "r")
-		for p in planets_file.readlines()[1:]:
-			planet = Planet(p.strip("\n").split(","))
-			sphere_actor = make_sphere(planet.texture_file, planet.equatorial_radius)
-			self.ren.AddActor(sphere_actor)
+		planets_keplerian_file = open("Data/planets_keplerian_elements.csv", "r")
 		
+		for p, k in zip(planets_file.readlines()[1:], planets_keplerian_file.readlines()[1:]):
+			print(k)
+			planet = Planet(p.strip("\n").split(","), k.strip("\n").split(","))
+			
+		
+			orbit = TwoBodyOrbit(planet.name, mu=sunmu)   # create an instance
+			t0 = 0.0                                        # epoch
+			orbit.setOrbKepl(t0, planet.a, planet.e, planet.i, planet.long_node, planet.long_peri,  0)                # define the orbit
+			pos, vel = orbit.posvelatt(t0)
+			xs, ys, zs, times = orbit.points(100)           # get points (series of 100 points)
+			points = vtk.vtkPoints()
+			for i in range(100):
+				points.InsertPoint(i, xs[i], ys[i], zs[i])
+			
+			lines = vtk.vtkCellArray()
+			lines.InsertNextCell(100)
+			for i in range(100):
+				lines.InsertCellPoint(i)
+
+			polyData = vtk.vtkPolyData()
+			polyData.SetPoints(points)
+			polyData.SetLines(lines)
+
+			# Create a mapper
+			mapper = vtk.vtkPolyDataMapper()
+			mapper.SetInputData(polyData)
+			mapper.ScalarVisibilityOn()
+			mapper.Update()
+
+			#mapper.SetScalarModeToUsePointFieldData()
+			#mapper.SelectColorArray("Colors")
+	
+			# Create an actor
+			actor = vtk.vtkActor()
+			actor.SetMapper(mapper)
+			self.ren.AddActor(actor)
+
+			sphere_actor = make_sphere(planet.texture_file, pos, planet.equatorial_radius*5000000)
+			print(pos)
+			self.ren.AddActor(sphere_actor)
 
 		'''
 		ctf = vtk.vtkColorTransferFunction()
@@ -258,10 +304,11 @@ class PyQtDemo(QMainWindow):
 		self.ren.GradientBackgroundOn()  # Set gradient for background
 		self.ren.SetBackground(0.75, 0.75, 0.75)  # Set background to silver
 
+		
+		#cam1 = self.ren.GetActiveCamera()
+		#cam1.SetPosition(-9490969.44074634, 26511189.024747908, 16490507.766397746)
+		#cam1.SetFocalPoint(0,0, 0)
 		'''
-		cam1 = self.ren.GetActiveCamera()
-		cam1.SetPosition(-9490969.44074634, 26511189.024747908, 16490507.766397746)
-		#cam1.SetFocalPoint(19967962.0, 9983981.0, 129.9000244140625)
 		cam1.SetViewUp(0,-1,0)
 		cam1.SetClippingRange(8261883.54280564, 50580834.84176244)
 		'''
