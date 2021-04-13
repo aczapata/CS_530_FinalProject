@@ -8,9 +8,8 @@ import vtk
 from vtk.util.misc import vtkGetDataRoot
 VTK_DATA_ROOT = vtkGetDataRoot()
 
-
 import sys
-
+import os
 
 # Purdue CS530 - Introduction to Scientific Visualization
 # Spring 2021
@@ -36,15 +35,28 @@ sunmu = 1.32712440041e20
 class Planet():
 	def __init__(self, physical_array, kepler_array):
 		self.name = physical_array[0]
-		self.equatorial_radius = float(physical_array[1])
-		self.mean_radius = float(physical_array[2])
+		self.equatorial_radius = float(physical_array[1]) *1000 #change km to meters
+		self.mean_radius = float(physical_array[2]) *1000 #change km to meters
 		self.texture_file = physical_array[11]
-		self.a = float(kepler_array[1])*1.496e11
+		self.a = float(kepler_array[1])*1.496e11 #change au to meters
 		self.e = float(kepler_array[2])
 		self.i = float(kepler_array[3])
 		self.l = float(kepler_array[4])
 		self.long_peri = float(kepler_array[5])
 		self.long_node = float(kepler_array[6])
+
+class Asteroid():
+	def __init__(self, physical_array, kepler_array):
+		self.name = physical_array[0]
+		self.diameter = float(physical_array[3])*1000 #change km to meters
+		self.texture_file = physical_array[7]
+		self.epoch = int(kepler_array[2])
+		self.a = float(kepler_array[3])*1.496e11 #change au to meters
+		self.e = float(kepler_array[4])
+		self.i = float(kepler_array[5])
+		self.w = float(kepler_array[6])
+		self.node = float(kepler_array[7])
+		self.m = float(kepler_array[8])
 		
 
 class MySphere(VTKPythonAlgorithmBase):
@@ -110,7 +122,11 @@ def save_frame(window, log):
 	# ---------------------------------------------------------------
 	# Save current contents of render window to PNG file
 	# ---------------------------------------------------------------
-	file_name = args.output + str(frame_counter).zfill(5) + ".png"
+
+	if not os.path.exists('screenshots'):
+		os.makedirs('screenshots')
+
+	file_name = "screenshots/picture_" + str(frame_counter).zfill(5) + ".png"
 	image = vtk.vtkWindowToImageFilter()
 	image.SetInput(window)
 	png_writer = vtk.vtkPNGWriter()
@@ -119,8 +135,6 @@ def save_frame(window, log):
 	window.Render()
 	png_writer.Write()
 	frame_counter += 1
-	if args.verbose:
-		print(file_name + " has been successfully exported")
 	log.insertPlainText('Exported {}\n'.format(file_name))
 
 def print_camera_settings(camera, text_window, log):
@@ -130,8 +144,8 @@ def print_camera_settings(camera, text_window, log):
 	text_window.setHtml("<div style='font-weight:bold'>Camera settings:</div><p><ul><li><div style='font-weight:bold'>Position:</div> {0}</li><li><div style='font-weight:bold'>Focal point:</div> {1}</li><li><div style='font-weight:bold'>Up vector:</div> {2}</li><li><div style='font-weight:bold'>Clipping range:</div> {3}</li></ul>".format(camera.GetPosition(), camera.GetFocalPoint(),camera.GetViewUp(),camera.GetClippingRange()))
 	log.insertPlainText('Updated camera info\n');
 
-def make_sphere(imageFile, center, radius):
-	new = radius
+def make_sphere(textureFile, center, radius):
+	
 	# create and visualize sphere
 	sphere_source = MySphere()
 	sphere_source.SetRadius(radius)
@@ -140,8 +154,7 @@ def make_sphere(imageFile, center, radius):
 	sphere_source.SetPhiResolution(100)
 
 	reader = vtk.vtkJPEGReader()
-	reader.SetFileName(imageFile)
-	reader.Update()
+	reader.SetFileName(textureFile)
 
 	texture = vtk.vtkTexture()
 	texture.SetInputConnection(reader.GetOutputPort())
@@ -226,25 +239,37 @@ class PyQtDemo(QMainWindow):
 
 		planets_file = open("Data/planets_physical_characteristics.csv", "r")
 		planets_keplerian_file = open("Data/planets_keplerian_elements.csv", "r")
+
+		asteroids_file = open("Data/asteroids_physical_characteristics.csv", "r")
+		asteroids_keplerian_file = open("Data/asteroids_keplerian_elements.csv", "r")
+
 		self.planet_spheres = []
 		self.planet_objs = []
+
+		self.asteroid_spheres = []
+		self.asteroid_objs = []
 		
+		#Create all actors for planets
 		for p, k in zip(planets_file.readlines()[1:], planets_keplerian_file.readlines()[1:]):
-			print(k)
+			
+			#Read attributes from file
 			planet = Planet(p.strip("\n").split(","), k.strip("\n").split(","))
 			
-		
-			orbit = TwoBodyOrbit(planet.name, mu=sunmu)   # create an instance
-			t0 = 0.0                                        # epoch
-			orbit.setOrbKepl(t0, planet.a, planet.e, planet.i, planet.long_node, planet.long_peri,  0)                # define the orbit
+			#Create orbit
+			orbit = TwoBodyOrbit(planet.name, mu=sunmu)
+			t0 = 0.0                                        
+			orbit.setOrbKepl(t0, planet.a, planet.e, planet.i, planet.long_node, planet.long_peri,  0)
 			pos, vel = orbit.posvelatt(t0)
-			xs, ys, zs, times = orbit.points(100)           # get points (series of 100 points)
+			xs, ys, zs, times = orbit.points(100)
 			points = vtk.vtkPoints()
+			
+			#Draw orbit from points
 			for i in range(100):
 				points.InsertPoint(i, xs[i], ys[i], zs[i])
 			
 			lines = vtk.vtkCellArray()
 			lines.InsertNextCell(100)
+
 			for i in range(100):
 				lines.InsertCellPoint(i)
 
@@ -253,23 +278,63 @@ class PyQtDemo(QMainWindow):
 			polyData.SetLines(lines)
 
 			# Create a mapper
-			mapper = vtk.vtkPolyDataMapper()
-			mapper.SetInputData(polyData)
-			mapper.ScalarVisibilityOn()
-			mapper.Update()
-
-			#mapper.SetScalarModeToUsePointFieldData()
-			#mapper.SelectColorArray("Colors")
-	
+			planet_orbit_mapper = vtk.vtkPolyDataMapper()
+			planet_orbit_mapper.SetInputData(polyData)
+			planet_orbit_mapper.ScalarVisibilityOn()
+			
 			# Create an actor
-			actor = vtk.vtkActor()
-			actor.SetMapper(mapper)
-			self.ren.AddActor(actor)
-			print(planet.texture_file)
-			sphere_actor, sphere_source = make_sphere(planet.texture_file, pos, planet.equatorial_radius*5000000)
+			planet_orbit_actor = vtk.vtkActor()
+			planet_orbit_actor.SetMapper(planet_orbit_mapper)
+			self.ren.AddActor(planet_orbit_actor)
+
+			sphere_actor, sphere_source = make_sphere(planet.texture_file, pos, planet.equatorial_radius)
 			self.planet_spheres.append(sphere_source)
 			self.planet_objs.append(planet)
 			print(pos)
+			self.ren.AddActor(sphere_actor)
+
+		#Create all actors for Asteroids
+		for a, k in zip(asteroids_file.readlines()[1:], asteroids_keplerian_file.readlines()[1:]):
+			
+			#Read attributes from file
+			asteroid = Asteroid(a.strip("\n").split(","), k.strip("\n").split(","))
+			
+			#Create orbit
+			orbit = TwoBodyOrbit(asteroid.name, mu=sunmu)
+			t0 = asteroid.epoch                                    
+			orbit.setOrbKepl(t0, asteroid.a, asteroid.e, asteroid.i, asteroid.node, asteroid.w,  asteroid.m)
+			pos, vel = orbit.posvelatt(t0)
+			xs, ys, zs, times = orbit.points(100)
+			points = vtk.vtkPoints()
+			
+			#Draw orbit from points
+			for i in range(100):
+				points.InsertPoint(i, xs[i], ys[i], zs[i])
+			
+			lines = vtk.vtkCellArray()
+			lines.InsertNextCell(100)
+
+			for i in range(100):
+				lines.InsertCellPoint(i)
+
+			polyData = vtk.vtkPolyData()
+			polyData.SetPoints(points)
+			polyData.SetLines(lines)
+
+			# Create a mapper
+			asteroid_orbit_mapper = vtk.vtkPolyDataMapper()
+			asteroid_orbit_mapper.SetInputData(polyData)
+			asteroid_orbit_mapper.ScalarVisibilityOn()
+			
+			# Create an actor
+			asteroid_orbit_actor = vtk.vtkActor()
+			asteroid_orbit_actor.SetMapper(asteroid_orbit_mapper)
+			self.ren.AddActor(asteroid_orbit_actor)
+
+			sphere_actor, sphere_source = make_sphere(asteroid.texture_file, pos, asteroid.diameter/2)
+			self.asteroid_spheres.append(sphere_source)
+			self.asteroid_objs.append(asteroid)
+			#print(pos)
 			self.ren.AddActor(sphere_actor)
 
 		self.ren.GradientBackgroundOn()  # Set gradient for background
@@ -296,12 +361,17 @@ class PyQtDemo(QMainWindow):
 			slider.setTickPosition(QSlider.TicksAbove)
 			slider.setRange(bounds[0], bounds[1])
 
-		slider_setup(self.ui.slider_radius, 500000, [0, 10000000], 500000)
+		slider_setup(self.ui.slider_radius, 2000, [0, 100000], 1000)
 
 	def radius_callback(self, val):
 		for i in range(len(self.planet_objs)):
 			#print(val)
 			self.planet_spheres[i].SetRadius(self.planet_objs[i].equatorial_radius * val)
+		
+		for i in range(len(self.asteroid_objs)):
+			#print(val)
+			self.asteroid_spheres[i].SetRadius(self.asteroid_objs[i].diameter* val/2 )
+
 		self.ui.log.insertPlainText('Scale set to {}\n'.format(val))
 		self.ui.vtkWidget.GetRenderWindow().Render()
 
