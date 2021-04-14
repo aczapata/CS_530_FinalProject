@@ -338,7 +338,7 @@ class PyQtDemo(QMainWindow):
 			self.ren.AddActor(sphere_actor)
 
 		self.ren.GradientBackgroundOn()  # Set gradient for background
-		self.ren.SetBackground(0.75, 0.75, 0.75)  # Set background to silver
+		self.ren.SetBackground(0.25, 0.25, 0.25)  # Set background to silver
 
 		
 		#cam1 = self.ren.GetActiveCamera()
