@@ -192,8 +192,8 @@ class Ui_MainWindow(object):
 		# it to centralWidget.
 		self.vtkWidget = QVTKRenderWindowInteractor(self.centralWidget)
 		# Sliders
-		self.slider_radius = QSlider()
-		#self.slider_phi = QSlider()
+		self.slider_scale = QSlider()
+		self.slider_orbit = QSlider()
 		#self.slider_radius = QSlider()
 		# Push buttons
 		self.push_screenshot = QPushButton()
@@ -215,9 +215,9 @@ class Ui_MainWindow(object):
 		# left corner and spans 3 rows and 4 columns.
 		self.gridlayout.addWidget(self.vtkWidget, 0, 0, 4, 4)
 		self.gridlayout.addWidget(QLabel("Scale"), 4, 0, 1, 1)
-		self.gridlayout.addWidget(self.slider_radius, 4, 1, 1, 1)
-		#self.gridlayout.addWidget(QLabel("Phi resolution"), 5, 0, 1, 1)
-		#self.gridlayout.addWidget(self.slider_phi, 5, 1, 1, 1)
+		self.gridlayout.addWidget(self.slider_scale, 4, 1, 1, 1)
+		self.gridlayout.addWidget(QLabel("Orbit Time"), 5, 0, 1, 1)
+		self.gridlayout.addWidget(self.slider_orbit, 5, 1, 1, 1)
 		#self.gridlayout.addWidget(QLabel("Edge radius"), 4, 2, 1, 1)
 		#self.gridlayout.addWidget(self.slider_radius, 4, 3, 1, 1)
 		self.gridlayout.addWidget(self.push_screenshot, 0, 5, 1, 1)
@@ -245,6 +245,7 @@ class PyQtDemo(QMainWindow):
 
 		self.planet_spheres = []
 		self.planet_objs = []
+		self.planet_orbits = []
 
 		self.asteroid_spheres = []
 		self.asteroid_objs = []
@@ -266,6 +267,7 @@ class PyQtDemo(QMainWindow):
 			pos, vel = orbit.posvelatt(t0)
 			xs, ys, zs, times = orbit.points(100)
 			points = vtk.vtkPoints()
+			self.planet_orbits.append(orbit)
 			
 			#Draw orbit from points
 			for i in range(100):
@@ -363,9 +365,10 @@ class PyQtDemo(QMainWindow):
 			slider.setTickPosition(QSlider.TicksAbove)
 			slider.setRange(bounds[0], bounds[1])
 
-		slider_setup(self.ui.slider_radius, 2000, [0, 10000], 100)
+		slider_setup(self.ui.slider_scale, 0, [0, 10000], 100)
+		slider_setup(self.ui.slider_orbit, 0, [0, 2000], 100)
 
-	def radius_callback(self, val):
+	def scale_callback(self, val):
 		for i in range(len(self.planet_objs)):
 			#print(val)
 			self.planet_spheres[i].SetRadius(self.planet_objs[i].equatorial_radius * val)
@@ -378,6 +381,20 @@ class PyQtDemo(QMainWindow):
 			self.sun_source.SetRadius(696340000 * val)
 		else:
 			self.sun_source.SetRadius(696340000 * 25)
+
+		self.ui.log.insertPlainText('Scale set to {}\n'.format(val))
+		self.ui.vtkWidget.GetRenderWindow().Render()
+
+	def orbit_callback(self, val):
+		for i in range(len(self.planet_orbits)):
+			#print(val)
+			pos, vel = self.planet_orbits[i].posvelatt(val)
+			self.planet_spheres[i].SetCenter(pos)
+			print (pos, vel)
+		
+		for i in range(len(self.asteroid_objs)):
+			print(val)
+			#self.asteroid_spheres[i].SetRadius(self.asteroid_objs[i].diameter* val/2 )
 
 		self.ui.log.insertPlainText('Scale set to {}\n'.format(val))
 		self.ui.vtkWidget.GetRenderWindow().Render()
@@ -414,7 +431,8 @@ if __name__=="__main__":
 	window.iren.Initialize() # Need this line to actually show
 	# the render inside Qt
 
-	window.ui.slider_radius.valueChanged.connect(window.radius_callback)
+	window.ui.slider_scale.valueChanged.connect(window.scale_callback)
+	window.ui.slider_orbit.valueChanged.connect(window.orbit_callback)
 	window.ui.push_screenshot.clicked.connect(window.screenshot_callback)
 	window.ui.push_camera.clicked.connect(window.camera_callback)
 	window.ui.push_quit.clicked.connect(window.quit_callback)
