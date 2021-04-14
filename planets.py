@@ -345,15 +345,12 @@ class PyQtDemo(QMainWindow):
 		self.ren.SetBackground(0.25, 0.25, 0.25)  # Set background to silver
 
 		
-		#cam1 = self.ren.GetActiveCamera()
-		#cam1.SetPosition(-9490969.44074634, 26511189.024747908, 16490507.766397746)
-		#cam1.SetFocalPoint(0,0, 0)
-		#cam1.SetClippingRange(100000000, 500000000)
-		'''
-		cam1.SetViewUp(0,-1,0)
-		cam1.SetClippingRange(8261883.54280564, 50580834.84176244)
-		'''
-
+		cam1 = self.ren.GetActiveCamera()
+		cam1.SetPosition(-1195762253824.0, 649975300096.0, 26201048247886.45)
+		cam1.SetFocalPoint(0,0, 0)
+		#cam1.SetClippingRange(34133437357658.445, 42777586964548.42)
+		cam1.SetViewUp(0,1,0)
+		
 		self.ui.vtkWidget.GetRenderWindow().AddRenderer(self.ren)
 		self.iren = self.ui.vtkWidget.GetRenderWindow().GetInteractor()
 
@@ -377,7 +374,10 @@ class PyQtDemo(QMainWindow):
 			#print(val)
 			self.asteroid_spheres[i].SetRadius(self.asteroid_objs[i].diameter* val/2 )
 		
-		self.sun_source.SetRadius(696340000 * val)
+		if val < 25:
+			self.sun_source.SetRadius(696340000 * val)
+		else:
+			self.sun_source.SetRadius(696340000 * 25)
 
 		self.ui.log.insertPlainText('Scale set to {}\n'.format(val))
 		self.ui.vtkWidget.GetRenderWindow().Render()
@@ -387,7 +387,7 @@ class PyQtDemo(QMainWindow):
 
 	def camera_callback(self):
 		print('do nothing right now')
-		#print_camera_settings(self.ren.GetActiveCamera(), self.ui.camera_info, self.ui.log)
+		print_camera_settings(self.ren.GetActiveCamera(), self.ui.camera_info, self.ui.log)
 
 	def quit_callback(self):
 		sys.exit()
