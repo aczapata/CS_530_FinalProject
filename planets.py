@@ -388,9 +388,9 @@ class PyQtDemo(QMainWindow):
 	def orbit_callback(self, val):
 		for i in range(len(self.planet_orbits)):
 			#print(val)
-			pos, vel = self.planet_orbits[i].posvelatt(val)
+			pos, vel = self.planet_orbits[i].posvelatt(val * 86400)
 			self.planet_spheres[i].SetCenter(pos)
-			print (pos, vel)
+			#print (pos, vel)
 		
 		for i in range(len(self.asteroid_objs)):
 			print(val)
