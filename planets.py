@@ -249,6 +249,7 @@ class PyQtDemo(QMainWindow):
 
 		self.asteroid_spheres = []
 		self.asteroid_objs = []
+		self.asteroid_orbits = []
 
 		#make the sun
 		self.sun_actor, self.sun_source = make_sphere("Data/2k_sun.jpg", [0,0,0], 696340000)
@@ -312,6 +313,7 @@ class PyQtDemo(QMainWindow):
 			pos, vel = orbit.posvelatt(t0)
 			xs, ys, zs, times = orbit.points(100)
 			points = vtk.vtkPoints()
+			self.asteroid_orbits.append(orbit)
 			
 			#Draw orbit from points
 			for i in range(100):
@@ -348,7 +350,7 @@ class PyQtDemo(QMainWindow):
 
 		
 		cam1 = self.ren.GetActiveCamera()
-		cam1.SetPosition(-1195762253824.0, 649975300096.0, 26201048247886.45)
+		cam1.SetPosition(-1195762253824.0, 649975300096.0, -26201048247886.45)
 		cam1.SetFocalPoint(0,0, 0)
 		#cam1.SetClippingRange(34133437357658.445, 42777586964548.42)
 		cam1.SetViewUp(0,1,0)
@@ -371,6 +373,10 @@ class PyQtDemo(QMainWindow):
 	def scale_callback(self, val):
 		for i in range(len(self.planet_objs)):
 			#print(val)
+			if i == 4:
+				if val > 2500:
+					self.planet_spheres[i].SetRadius(self.planet_objs[i].equatorial_radius * 2500)
+					continue
 			self.planet_spheres[i].SetRadius(self.planet_objs[i].equatorial_radius * val)
 		
 		for i in range(len(self.asteroid_objs)):
@@ -393,8 +399,9 @@ class PyQtDemo(QMainWindow):
 			#print (pos, vel)
 		
 		for i in range(len(self.asteroid_objs)):
-			print(val)
-			#self.asteroid_spheres[i].SetRadius(self.asteroid_objs[i].diameter* val/2 )
+			#print(val)
+			pos, vel = self.asteroid_orbits[i].posvelatt(val * 86400)
+			self.asteroid_spheres[i].SetCenter(pos)
 
 		self.ui.log.insertPlainText('Scale set to {}\n'.format(val))
 		self.ui.vtkWidget.GetRenderWindow().Render()
@@ -431,8 +438,8 @@ if __name__=="__main__":
 	window.iren.Initialize() # Need this line to actually show
 	# the render inside Qt
 
-	window.ui.slider_scale.valueChanged.connect(window.scale_callback)
-	window.ui.slider_orbit.valueChanged.connect(window.orbit_callback)
+	window.ui.slider_scale.sliderMoved.connect(window.scale_callback)
+	window.ui.slider_orbit.sliderMoved.connect(window.orbit_callback)
 	window.ui.push_screenshot.clicked.connect(window.screenshot_callback)
 	window.ui.push_camera.clicked.connect(window.camera_callback)
 	window.ui.push_quit.clicked.connect(window.quit_callback)
