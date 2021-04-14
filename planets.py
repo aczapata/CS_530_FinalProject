@@ -248,6 +248,10 @@ class PyQtDemo(QMainWindow):
 
 		self.asteroid_spheres = []
 		self.asteroid_objs = []
+
+		#make the sun
+		self.sun_actor, self.sun_source = make_sphere("Data/2k_sun.jpg", [0,0,0], 696340000)
+		self.ren.AddActor(self.sun_actor)
 		
 		#Create all actors for planets
 		for p, k in zip(planets_file.readlines()[1:], planets_keplerian_file.readlines()[1:]):
@@ -344,6 +348,7 @@ class PyQtDemo(QMainWindow):
 		#cam1 = self.ren.GetActiveCamera()
 		#cam1.SetPosition(-9490969.44074634, 26511189.024747908, 16490507.766397746)
 		#cam1.SetFocalPoint(0,0, 0)
+		#cam1.SetClippingRange(100000000, 500000000)
 		'''
 		cam1.SetViewUp(0,-1,0)
 		cam1.SetClippingRange(8261883.54280564, 50580834.84176244)
@@ -361,7 +366,7 @@ class PyQtDemo(QMainWindow):
 			slider.setTickPosition(QSlider.TicksAbove)
 			slider.setRange(bounds[0], bounds[1])
 
-		slider_setup(self.ui.slider_radius, 2000, [0, 100000], 1000)
+		slider_setup(self.ui.slider_radius, 2000, [0, 10000], 100)
 
 	def radius_callback(self, val):
 		for i in range(len(self.planet_objs)):
@@ -371,6 +376,8 @@ class PyQtDemo(QMainWindow):
 		for i in range(len(self.asteroid_objs)):
 			#print(val)
 			self.asteroid_spheres[i].SetRadius(self.asteroid_objs[i].diameter* val/2 )
+		
+		self.sun_source.SetRadius(696340000 * val)
 
 		self.ui.log.insertPlainText('Scale set to {}\n'.format(val))
 		self.ui.vtkWidget.GetRenderWindow().Render()
