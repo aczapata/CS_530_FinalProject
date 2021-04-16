@@ -17,7 +17,7 @@ import os
 # Simple example showing how to use PyQt5 to manipulate
 # a visualization
 
-from PyQt5.QtWidgets import QApplication, QWidget, QMainWindow, QSlider, QGridLayout, QLabel, QPushButton, QTextEdit, QLineEdit
+from PyQt5.QtWidgets import QApplication, QWidget, QMainWindow, QSlider, QGridLayout, QLabel, QPushButton, QTextEdit, QLineEdit, QComboBox
 import PyQt5.QtCore as QtCore
 from PyQt5.QtCore import Qt
 import vtk
@@ -259,6 +259,7 @@ class Ui_MainWindow(object):
 		self.date_textbox.setText("12-17-2020")
 		self.push_date = QPushButton()
 		self.push_date.setText('Enter Date')
+		self.obj_focus = QComboBox()
 		# Push buttons
 		self.push_screenshot = QPushButton()
 		self.push_screenshot.setText('Save screenshot')
@@ -285,6 +286,8 @@ class Ui_MainWindow(object):
 		self.gridlayout.addWidget(QLabel("Date Format: MM-DD-YYYY"),4,2,1,1)
 		self.gridlayout.addWidget(self.date_textbox,5,2,1,1)
 		self.gridlayout.addWidget(self.push_date,6,2,1,1)
+		self.gridlayout.addWidget(QLabel("Select Object To Center Camera"),4,3,1,1)
+		self.gridlayout.addWidget(self.obj_focus,5,3,1,1)
 		#self.gridlayout.addWidget(QLabel("Edge radius"), 4, 2, 1, 1)
 		#self.gridlayout.addWidget(self.slider_radius, 4, 3, 1, 1)
 		self.gridlayout.addWidget(self.push_screenshot, 0, 5, 1, 1)
@@ -412,6 +415,9 @@ class PyQtDemo(QMainWindow):
 			#print(pos)
 			self.ren.AddActor(sphere_actor)
 
+		objects = ["Sun","Mercury","Venus","Earth","Mars","Ceres","Vesta","Pallas","Hygiea","Interamnia","Jupiter","Saturn","Uranus","Neptune","Pluto"]
+		self.ui.obj_focus.addItems(objects)
+
 		self.ren.GradientBackgroundOn()  # Set gradient for background
 		self.ren.SetBackground(0.25, 0.25, 0.25)  # Set background to silver
 
@@ -475,6 +481,37 @@ class PyQtDemo(QMainWindow):
 		self.ui.log.insertPlainText('Date set to {}\n'.format(self.ui.date_textbox.text()))
 		self.ui.vtkWidget.GetRenderWindow().Render()
 
+	def focus_callback(self, val):
+		print(val)
+		objects = ["Sun","Mercury","Venus","Earth","Mars","Ceres","Vesta","Pallas","Hygiea","Interamnia","Jupiter","Saturn","Uranus","Neptune","Pluto"]
+		if val == 0:
+			cam1 = self.ren.GetActiveCamera()
+			cam1.SetPosition(-1195762253824.0, 649975300096.0, -26201048247886.45)
+			cam1.SetFocalPoint(0,0, 0)
+			#cam1.SetClippingRange(34133437357658.445, 42777586964548.42)
+			cam1.SetViewUp(0,1,0)
+			return
+
+		switcher = {
+			1 : self.planet_spheres[0],
+			2 : self.planet_spheres[1],
+			3 : self.planet_spheres[2],
+			4 : self.planet_spheres[3],
+			5 : self.asteroid_spheres[0],
+			6 : self.asteroid_spheres[1],
+			7 : self.asteroid_spheres[2],
+			8 : self.asteroid_spheres[3],
+			9 : self.asteroid_spheres[4],
+			10 : self.planet_spheres[4],
+			11 : self.planet_spheres[5],
+			12 : self.planet_spheres[6],
+			13 : self.planet_spheres[7],
+			13 : self.planet_spheres[8]
+		}
+		obj_sphere = switcher.get(val)
+		cam1 = self.ren.GetActiveCamera()
+		cam1.SetFocalPoint(obj_sphere.center)
+
 	def orbit_callback(self, val):
 		for i in range(len(self.planet_orbits)):
 			#print(val)
@@ -524,6 +561,7 @@ if __name__=="__main__":
 
 	window.ui.slider_scale.sliderMoved.connect(window.scale_callback)
 	window.ui.slider_orbit.sliderMoved.connect(window.orbit_callback)
+	window.ui.obj_focus.currentIndexChanged.connect(window.focus_callback)
 	window.ui.push_screenshot.clicked.connect(window.screenshot_callback)
 	window.ui.push_camera.clicked.connect(window.camera_callback)
 	window.ui.push_quit.clicked.connect(window.quit_callback)
