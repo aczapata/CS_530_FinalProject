@@ -17,7 +17,7 @@ import os
 # Simple example showing how to use PyQt5 to manipulate
 # a visualization
 
-from PyQt5.QtWidgets import QApplication, QWidget, QMainWindow, QSlider, QGridLayout, QLabel, QPushButton, QTextEdit
+from PyQt5.QtWidgets import QApplication, QWidget, QMainWindow, QSlider, QGridLayout, QLabel, QPushButton, QTextEdit, QLineEdit
 import PyQt5.QtCore as QtCore
 from PyQt5.QtCore import Qt
 import vtk
@@ -28,9 +28,70 @@ from vtk.util.vtkAlgorithm import VTKPythonAlgorithmBase
 import vtk.util.numpy_support
 import colorbar
 from pytwobodyorbit import TwoBodyOrbit
+import math
 
 frame_counter = 0
 sunmu = 1.32712440041e20
+
+#taken from https://gist.github.com/jiffyclub/1294443
+def date_to_mjd(year,month,day):
+    """
+    Convert a date to Julian Day.
+    
+    Algorithm from 'Practical Astronomy with your Calculator or Spreadsheet', 
+        4th ed., Duffet-Smith and Zwart, 2011.
+    
+    Parameters
+    ----------
+    year : int
+        Year as integer. Years preceding 1 A.D. should be 0 or negative.
+        The year before 1 A.D. is 0, 10 B.C. is year -9.
+        
+    month : int
+        Month as integer, Jan = 1, Feb. = 2, etc.
+    
+    day : float
+        Day, may contain fractional part.
+    
+    Returns
+    -------
+    jd : float
+        Julian Day
+        
+    Examples
+    --------
+    Convert 6 a.m., February 17, 1985 to Julian Day
+    
+    >>> date_to_jd(1985,2,17.25)
+    2446113.75
+    
+    """
+    if month == 1 or month == 2:
+        yearp = year - 1
+        monthp = month + 12
+    else:
+        yearp = year
+        monthp = month
+    
+    # this checks where we are in relation to October 15, 1582, the beginning
+    # of the Gregorian calendar.
+    if ((year < 1582) or
+        (year == 1582 and month < 10) or
+        (year == 1582 and month == 10 and day < 15)):
+        # before start of Gregorian calendar
+        B = 0
+    else:
+        # after start of Gregorian calendar
+        A = math.trunc(yearp / 100.)
+        B = 2 - A + math.trunc(A / 4.)
+        
+    if yearp < 0:
+        C = math.trunc((365.25 * yearp) - 0.75)
+    else:
+        C = math.trunc(365.25 * yearp)
+    D = math.trunc(30.6001 * (monthp + 1))
+    jd = B + C + D + day + 1720994.5
+    return jd - 2400000.5
 
 class Planet():
 	def __init__(self, physical_array, kepler_array):
@@ -194,7 +255,10 @@ class Ui_MainWindow(object):
 		# Sliders
 		self.slider_scale = QSlider()
 		self.slider_orbit = QSlider()
-		#self.slider_radius = QSlider()
+		self.date_textbox = QLineEdit()
+		self.date_textbox.setText("12-17-2020")
+		self.push_date = QPushButton()
+		self.push_date.setText('Enter Date')
 		# Push buttons
 		self.push_screenshot = QPushButton()
 		self.push_screenshot.setText('Save screenshot')
@@ -218,6 +282,9 @@ class Ui_MainWindow(object):
 		self.gridlayout.addWidget(self.slider_scale, 4, 1, 1, 1)
 		self.gridlayout.addWidget(QLabel("Orbit Time"), 5, 0, 1, 1)
 		self.gridlayout.addWidget(self.slider_orbit, 5, 1, 1, 1)
+		self.gridlayout.addWidget(QLabel("Date Format: MM-DD-YYYY"),4,2,1,1)
+		self.gridlayout.addWidget(self.date_textbox,5,2,1,1)
+		self.gridlayout.addWidget(self.push_date,6,2,1,1)
 		#self.gridlayout.addWidget(QLabel("Edge radius"), 4, 2, 1, 1)
 		#self.gridlayout.addWidget(self.slider_radius, 4, 3, 1, 1)
 		self.gridlayout.addWidget(self.push_screenshot, 0, 5, 1, 1)
@@ -263,7 +330,7 @@ class PyQtDemo(QMainWindow):
 			
 			#Create orbit
 			orbit = TwoBodyOrbit(planet.name, mu=sunmu)
-			t0 = 0.0                                        
+			t0 = 59200 * 86400                                      
 			orbit.setOrbKepl(t0, planet.a, planet.e, planet.i, planet.long_node, planet.long_peri,  0)
 			pos, vel = orbit.posvelatt(t0)
 			xs, ys, zs, times = orbit.points(100)
@@ -308,7 +375,7 @@ class PyQtDemo(QMainWindow):
 			
 			#Create orbit
 			orbit = TwoBodyOrbit(asteroid.name, mu=sunmu)
-			t0 = asteroid.epoch                                    
+			t0 = asteroid.epoch * 86400                                   
 			orbit.setOrbKepl(t0, asteroid.a, asteroid.e, asteroid.i, asteroid.node, asteroid.w,  asteroid.m)
 			pos, vel = orbit.posvelatt(t0)
 			xs, ys, zs, times = orbit.points(100)
@@ -368,7 +435,7 @@ class PyQtDemo(QMainWindow):
 			slider.setRange(bounds[0], bounds[1])
 
 		slider_setup(self.ui.slider_scale, 0, [0, 10000], 100)
-		slider_setup(self.ui.slider_orbit, 0, [0, 2000], 100)
+		slider_setup(self.ui.slider_orbit, 0, [59200, 100000], 1000)
 
 	def scale_callback(self, val):
 		for i in range(len(self.planet_objs)):
@@ -389,6 +456,23 @@ class PyQtDemo(QMainWindow):
 			self.sun_source.SetRadius(696340000 * 25)
 
 		self.ui.log.insertPlainText('Scale set to {}\n'.format(val))
+		self.ui.vtkWidget.GetRenderWindow().Render()
+
+	def date_callback(self):
+		date = self.ui.date_textbox.text().split("-")
+		mjd = date_to_mjd(int(date[2]),int(date[0]),float(date[1]))
+		for i in range(len(self.planet_orbits)):
+			#print(val)
+			pos, vel = self.planet_orbits[i].posvelatt(mjd * 86400)
+			self.planet_spheres[i].SetCenter(pos)
+			#print (pos, vel)
+		
+		for i in range(len(self.asteroid_objs)):
+			#print(val)
+			pos, vel = self.asteroid_orbits[i].posvelatt(mjd * 86400)
+			self.asteroid_spheres[i].SetCenter(pos)
+
+		self.ui.log.insertPlainText('Date set to {}\n'.format(self.ui.date_textbox.text()))
 		self.ui.vtkWidget.GetRenderWindow().Render()
 
 	def orbit_callback(self, val):
@@ -443,4 +527,5 @@ if __name__=="__main__":
 	window.ui.push_screenshot.clicked.connect(window.screenshot_callback)
 	window.ui.push_camera.clicked.connect(window.camera_callback)
 	window.ui.push_quit.clicked.connect(window.quit_callback)
+	window.ui.push_date.clicked.connect(window.date_callback)
 	sys.exit(app.exec_())
