@@ -506,7 +506,7 @@ class PyQtDemo(QMainWindow):
 			11 : self.planet_spheres[5],
 			12 : self.planet_spheres[6],
 			13 : self.planet_spheres[7],
-			13 : self.planet_spheres[8]
+			14 : self.planet_spheres[8]
 		}
 		obj_sphere = switcher.get(val)
 		cam1 = self.ren.GetActiveCamera()
