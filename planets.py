@@ -336,18 +336,18 @@ class PyQtDemo(QMainWindow):
 			t0 = 59200 * 86400                                      
 			orbit.setOrbKepl(t0, planet.a, planet.e, planet.i, planet.long_node, planet.long_peri,  0)
 			pos, vel = orbit.posvelatt(t0)
-			xs, ys, zs, times = orbit.points(100)
+			xs, ys, zs, times = orbit.points(1000)
 			points = vtk.vtkPoints()
 			self.planet_orbits.append(orbit)
 			
 			#Draw orbit from points
-			for i in range(100):
+			for i in range(1000):
 				points.InsertPoint(i, xs[i], ys[i], zs[i])
 			
 			lines = vtk.vtkCellArray()
-			lines.InsertNextCell(100)
+			lines.InsertNextCell(1000)
 
-			for i in range(100):
+			for i in range(1000):
 				lines.InsertCellPoint(i)
 
 			polyData = vtk.vtkPolyData()
@@ -425,8 +425,9 @@ class PyQtDemo(QMainWindow):
 		cam1 = self.ren.GetActiveCamera()
 		cam1.SetPosition(-1195762253824.0, 649975300096.0, -26201048247886.45)
 		cam1.SetFocalPoint(0,0, 0)
-		#cam1.SetClippingRange(34133437357658.445, 42777586964548.42)
 		cam1.SetViewUp(0,1,0)
+		
+		self.ren.ResetCameraClippingRange()
 		
 		self.ui.vtkWidget.GetRenderWindow().AddRenderer(self.ren)
 		self.iren = self.ui.vtkWidget.GetRenderWindow().GetInteractor()
@@ -440,16 +441,19 @@ class PyQtDemo(QMainWindow):
 			slider.setTickPosition(QSlider.TicksAbove)
 			slider.setRange(bounds[0], bounds[1])
 
-		slider_setup(self.ui.slider_scale, 0, [0, 10000], 100)
+		slider_setup(self.ui.slider_scale, 0, [0, 50000], 1000)
 		slider_setup(self.ui.slider_orbit, 0, [59200, 100000], 1000)
+
 
 	def scale_callback(self, val):
 		for i in range(len(self.planet_objs)):
 			#print(val)
-			if i == 4:
-				if val > 2500:
-					self.planet_spheres[i].SetRadius(self.planet_objs[i].equatorial_radius * 2500)
-					continue
+			if i >= 4 and val > 2500 and i != 8:
+				self.planet_spheres[i].SetRadius(self.planet_objs[i].equatorial_radius * 2500)
+				continue
+			elif i < 4 and val > 3800:
+				self.planet_spheres[i].SetRadius(self.planet_objs[i].equatorial_radius * 3500)
+				continue
 			self.planet_spheres[i].SetRadius(self.planet_objs[i].equatorial_radius * val)
 		
 		for i in range(len(self.asteroid_objs)):
@@ -488,8 +492,8 @@ class PyQtDemo(QMainWindow):
 			cam1 = self.ren.GetActiveCamera()
 			cam1.SetPosition(-1195762253824.0, 649975300096.0, -26201048247886.45)
 			cam1.SetFocalPoint(0,0, 0)
-			#cam1.SetClippingRange(34133437357658.445, 42777586964548.42)
 			cam1.SetViewUp(0,1,0)
+			self.ren.ResetCameraClippingRange()
 			return
 
 		switcher = {
@@ -511,6 +515,7 @@ class PyQtDemo(QMainWindow):
 		obj_sphere = switcher.get(val)
 		cam1 = self.ren.GetActiveCamera()
 		cam1.SetFocalPoint(obj_sphere.center)
+		self.ren.ResetCameraClippingRange()
 
 	def orbit_callback(self, val):
 		for i in range(len(self.planet_orbits)):
