@@ -1,6 +1,6 @@
 ﻿Asteroid,absolute magnitude,magnitude slope,diameter (km),"GM (km^3/s^2	)",rotation period (h),Geometric Albedo,Texture File
-Ceres,3.53,0.12,939.4,62.6284,9.07417,0.09,Data\2k_ceres.jpg
-Vesta,3.29,0.32,525.4,17.8,5.34212766,0.4228,Data\2k_ceres.jpg
-Pallas,4.21,0.11,545,14.3,7.8132,0.101,Data\2k_ceres.jpg
-Hygiea,5.53,.,407.12,7,13.828,0.0717,Data\2k_ceres.jpg
-Interamnia ,6.39,-0.02,306.313,5,8.727,0.078,Data\2k_ceres.jpg
+Ceres,3.53,0.12,939.4,62.6284,9.07417,0.09,Data\2k_default.jpg
+Vesta,3.29,0.32,525.4,17.8,5.34212766,0.4228,Data\2k_default.jpg
+Pallas,4.21,0.11,545,14.3,7.8132,0.101,Data\2k_default.jpg
+Hygiea,5.53,.,407.12,7,13.828,0.0717,Data\2k_default.jpg
+Interamnia ,6.39,-0.02,306.313,5,8.727,0.078,Data\2k_default.jpg

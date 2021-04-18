@@ -17,7 +17,8 @@ import os
 # Simple example showing how to use PyQt5 to manipulate
 # a visualization
 
-from PyQt5.QtWidgets import QApplication, QWidget, QMainWindow, QSlider, QGridLayout, QLabel, QPushButton, QTextEdit, QLineEdit, QComboBox
+from PyQt5.QtCore import QDate
+from PyQt5.QtWidgets import QApplication, QWidget, QMainWindow, QSlider, QGridLayout, QLabel, QPushButton, QTextEdit, QComboBox, QDateTimeEdit
 import PyQt5.QtCore as QtCore
 from PyQt5.QtCore import Qt
 import vtk
@@ -255,10 +256,14 @@ class Ui_MainWindow(object):
 		# Sliders
 		self.slider_scale = QSlider()
 		self.slider_orbit = QSlider()
-		self.date_textbox = QLineEdit()
-		self.date_textbox.setText("12-17-2020")
-		self.push_date = QPushButton()
-		self.push_date.setText('Enter Date')
+		
+		#Date Picker
+		self.date_textbox = QDateTimeEdit()
+		self.date_textbox.setCalendarPopup(True)
+		self.date_textbox.setMaximumDate(QDate(2050, 12, 31))
+		self.date_textbox.setDate(QDate.currentDate())
+		
+		#Combo box
 		self.obj_focus = QComboBox()
 		# Push buttons
 		self.push_screenshot = QPushButton()
@@ -283,9 +288,9 @@ class Ui_MainWindow(object):
 		self.gridlayout.addWidget(self.slider_scale, 4, 1, 1, 1)
 		self.gridlayout.addWidget(QLabel("Orbit Time"), 5, 0, 1, 1)
 		self.gridlayout.addWidget(self.slider_orbit, 5, 1, 1, 1)
-		self.gridlayout.addWidget(QLabel("Date Format: MM-DD-YYYY"),4,2,1,1)
+		self.gridlayout.addWidget(QLabel("Enter Date"),4,2,1,1)
 		self.gridlayout.addWidget(self.date_textbox,5,2,1,1)
-		self.gridlayout.addWidget(self.push_date,6,2,1,1)
+		#self.gridlayout.addWidget(self.push_date,6,2,1,1)
 		self.gridlayout.addWidget(QLabel("Select Object To Center Camera"),4,3,1,1)
 		self.gridlayout.addWidget(self.obj_focus,5,3,1,1)
 		#self.gridlayout.addWidget(QLabel("Edge radius"), 4, 2, 1, 1)
@@ -468,9 +473,8 @@ class PyQtDemo(QMainWindow):
 		self.ui.log.insertPlainText('Scale set to {}\n'.format(val))
 		self.ui.vtkWidget.GetRenderWindow().Render()
 
-	def date_callback(self):
-		date = self.ui.date_textbox.text().split("-")
-		mjd = date_to_mjd(int(date[2]),int(date[0]),float(date[1]))
+	def date_callback(self,val):
+		mjd = date_to_mjd(val.year(), val.month(), val.day())
 		for i in range(len(self.planet_orbits)):
 			#print(val)
 			pos, vel = self.planet_orbits[i].posvelatt(mjd * 86400)
@@ -570,5 +574,5 @@ if __name__=="__main__":
 	window.ui.push_screenshot.clicked.connect(window.screenshot_callback)
 	window.ui.push_camera.clicked.connect(window.camera_callback)
 	window.ui.push_quit.clicked.connect(window.quit_callback)
-	window.ui.push_date.clicked.connect(window.date_callback)
+	window.ui.date_textbox.dateChanged.connect(window.date_callback)
 	sys.exit(app.exec_())
