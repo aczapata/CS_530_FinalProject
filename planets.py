@@ -286,7 +286,7 @@ class Ui_MainWindow(object):
 		self.gridlayout.addWidget(self.vtkWidget, 0, 0, 4, 4)
 		self.gridlayout.addWidget(QLabel("Scale"), 4, 0, 1, 1)
 		self.gridlayout.addWidget(self.slider_scale, 4, 1, 1, 1)
-		self.gridlayout.addWidget(QLabel("Orbit Time"), 5, 0, 1, 1)
+		self.gridlayout.addWidget(QLabel("Try moving the planets!"), 5, 0, 1, 1)
 		self.gridlayout.addWidget(self.slider_orbit, 5, 1, 1, 1)
 		self.gridlayout.addWidget(QLabel("Enter Date"),4,2,1,1)
 		self.gridlayout.addWidget(self.date_textbox,5,2,1,1)
@@ -447,7 +447,7 @@ class PyQtDemo(QMainWindow):
 			slider.setRange(bounds[0], bounds[1])
 
 		slider_setup(self.ui.slider_scale, 0, [0, 50000], 1000)
-		slider_setup(self.ui.slider_orbit, 0, [59200, 100000], 1000)
+		slider_setup(self.ui.slider_orbit, 0, [59200, 70000], 1000)
 
 
 	def scale_callback(self, val):
