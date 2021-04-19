@@ -470,7 +470,7 @@ class PyQtDemo(QMainWindow):
 		else:
 			self.sun_source.SetRadius(696340000 * 25)
 
-		self.ui.log.insertPlainText('Scale set to {}\n'.format(val))
+		#self.ui.log.insertPlainText('Scale set to {}\n'.format(val))
 		self.ui.vtkWidget.GetRenderWindow().Render()
 
 	def date_callback(self,val):
@@ -533,8 +533,12 @@ class PyQtDemo(QMainWindow):
 			pos, vel = self.asteroid_orbits[i].posvelatt(val * 86400)
 			self.asteroid_spheres[i].SetCenter(pos)
 
-		self.ui.log.insertPlainText('Scale set to {}\n'.format(val))
+		
 		self.ui.vtkWidget.GetRenderWindow().Render()
+
+	def scale_release(self, val):
+		self.ui.log.insertPlainText('Scale set to {}\n'.format(val))
+		self.ui.log.insertPlainText('Sun Scale Max: 25\nInner Solar System Scale Max: 3800\nOuter Solar System Scale Max: 2500\nAsteroids and Pluto Scale Max: 50000\n')
 
 	def screenshot_callback(self):
 		save_frame(self.ui.vtkWidget.GetRenderWindow(), self.ui.log)
@@ -569,6 +573,7 @@ if __name__=="__main__":
 	# the render inside Qt
 
 	window.ui.slider_scale.sliderMoved.connect(window.scale_callback)
+	window.ui.slider_scale.valueChanged.connect(window.scale_release)
 	window.ui.slider_orbit.sliderMoved.connect(window.orbit_callback)
 	window.ui.obj_focus.currentIndexChanged.connect(window.focus_callback)
 	window.ui.push_screenshot.clicked.connect(window.screenshot_callback)
