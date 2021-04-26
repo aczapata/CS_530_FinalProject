@@ -199,12 +199,6 @@ def save_frame(window, log):
 	frame_counter += 1
 	log.insertPlainText('Exported {}\n'.format(file_name))
 
-def print_camera_settings(camera, text_window, log):
-	# ---------------------------------------------------------------
-	# Print out the current settings of the camera
-	# ---------------------------------------------------------------
-	text_window.setHtml("<div style='font-weight:bold'>Camera settings:</div><p><ul><li><div style='font-weight:bold'>Position:</div> {0}</li><li><div style='font-weight:bold'>Focal point:</div> {1}</li><li><div style='font-weight:bold'>Up vector:</div> {2}</li><li><div style='font-weight:bold'>Clipping range:</div> {3}</li></ul>".format(camera.GetPosition(), camera.GetFocalPoint(),camera.GetViewUp(),camera.GetClippingRange()))
-	log.insertPlainText('Updated camera info\n');
 
 def make_sphere(textureFile, center, radius):
 	
@@ -268,15 +262,9 @@ class Ui_MainWindow(object):
 		# Push buttons
 		self.push_screenshot = QPushButton()
 		self.push_screenshot.setText('Save screenshot')
-		self.push_camera = QPushButton()
-		self.push_camera.setText('Update camera info')
 		self.push_quit = QPushButton()
 		self.push_quit.setText('Quit')
 		# Text windows
-		self.camera_info = QTextEdit()
-		self.camera_info.setReadOnly(True)
-		self.camera_info.setAcceptRichText(True)
-		self.camera_info.setHtml("<div style='font-weight: bold'>Camera settings</div>")
 		self.log = QTextEdit()
 		self.log.setReadOnly(True)
 		# We are now going to position our widgets inside our
@@ -296,9 +284,7 @@ class Ui_MainWindow(object):
 		#self.gridlayout.addWidget(QLabel("Edge radius"), 4, 2, 1, 1)
 		#self.gridlayout.addWidget(self.slider_radius, 4, 3, 1, 1)
 		self.gridlayout.addWidget(self.push_screenshot, 0, 5, 1, 1)
-		self.gridlayout.addWidget(self.push_camera, 1, 5, 1, 1)
-		self.gridlayout.addWidget(self.camera_info, 2, 4, 1, 2)
-		self.gridlayout.addWidget(self.log, 3, 4, 1, 2)
+		self.gridlayout.addWidget(self.log, 1, 4, 1, 2)
 		self.gridlayout.addWidget(self.push_quit, 5, 5, 1, 1)
 		MainWindow.setCentralWidget(self.centralWidget)
 
@@ -308,7 +294,7 @@ class PyQtDemo(QMainWindow):
 		QMainWindow.__init__(self, parent)
 		self.ui = Ui_MainWindow()
 		self.ui.setupUi(self)
-
+		self.obj_sphere = 0
 		# Create the Renderer
 		self.ren = vtk.vtkRenderer()
 
@@ -329,8 +315,26 @@ class PyQtDemo(QMainWindow):
 		#make the sun
 		self.sun_actor, self.sun_source = make_sphere("Data/2k_sun.jpg", [0,0,0], 696340000)
 		self.ren.AddActor(self.sun_actor)
-		
+
+		color_scale = [	[255, 0, 0], #red
+						[255,127, 0], #orange
+						[255, 255, 0], #yellow
+						[0, 255, 0], #green
+						[0, 255, 255], #cyan*
+						[0, 127, 255], #blue*
+						[127, 0, 255], #purple*
+						[255, 0, 255],	#magenta
+						[255, 0, 127], #rose
+						#Asteroids
+						[150, 255, 90], 
+						[255, 150, 90], 
+						[255, 255, 255], 
+						[90, 150, 255], 
+						[255, 100, 255], 
+						]		
+		index = 0
 		#Create all actors for planets
+
 		for p, k in zip(planets_file.readlines()[1:], planets_keplerian_file.readlines()[1:]):
 			
 			#Read attributes from file
@@ -345,6 +349,13 @@ class PyQtDemo(QMainWindow):
 			points = vtk.vtkPoints()
 			self.planet_orbits.append(orbit)
 			
+			# Setup the colors array
+			colors = vtk.vtkUnsignedCharArray()
+			colors.SetNumberOfComponents(3)
+			colors.SetName("Colors")
+
+			colors.InsertNextTypedTuple(color_scale[index])
+			index+=1
 			#Draw orbit from points
 			for i in range(1000):
 				points.InsertPoint(i, xs[i], ys[i], zs[i])
@@ -358,6 +369,7 @@ class PyQtDemo(QMainWindow):
 			polyData = vtk.vtkPolyData()
 			polyData.SetPoints(points)
 			polyData.SetLines(lines)
+			polyData.GetCellData().SetScalars(colors)
 
 			# Create a mapper
 			planet_orbit_mapper = vtk.vtkPolyDataMapper()
@@ -390,6 +402,14 @@ class PyQtDemo(QMainWindow):
 			points = vtk.vtkPoints()
 			self.asteroid_orbits.append(orbit)
 			
+			# Setup the colors array
+			colors = vtk.vtkUnsignedCharArray()
+			colors.SetNumberOfComponents(3)
+			colors.SetName("Colors")
+
+			colors.InsertNextTypedTuple(color_scale[index])
+			index+=1
+
 			#Draw orbit from points
 			for i in range(100):
 				points.InsertPoint(i, xs[i], ys[i], zs[i])
@@ -403,6 +423,7 @@ class PyQtDemo(QMainWindow):
 			polyData = vtk.vtkPolyData()
 			polyData.SetPoints(points)
 			polyData.SetLines(lines)
+			polyData.GetCellData().SetScalars(colors)
 
 			# Create a mapper
 			asteroid_orbit_mapper = vtk.vtkPolyDataMapper()
@@ -487,17 +508,25 @@ class PyQtDemo(QMainWindow):
 			self.asteroid_spheres[i].SetCenter(pos)
 
 		self.ui.log.insertPlainText('Date set to {}\n'.format(self.ui.date_textbox.text()))
+		
+		if self.obj_sphere != 0:
+			cam1 = self.ren.GetActiveCamera()
+			cam1.SetFocalPoint(self.obj_sphere.center)
+			self.ren.ResetCameraClippingRange()
+
 		self.ui.vtkWidget.GetRenderWindow().Render()
 
 	def focus_callback(self, val):
 		print(val)
 		objects = ["Sun","Mercury","Venus","Earth","Mars","Ceres","Vesta","Pallas","Hygiea","Interamnia","Jupiter","Saturn","Uranus","Neptune","Pluto"]
 		if val == 0:
+
 			cam1 = self.ren.GetActiveCamera()
-			cam1.SetPosition(-1195762253824.0, 649975300096.0, -26201048247886.45)
-			cam1.SetFocalPoint(0,0, 0)
+			#cam1.SetPosition(-1195762253824.0, 649975300096.0, -26201048247886.45)
+			cam1.SetFocalPoint(0, 0, 0)
 			cam1.SetViewUp(0,1,0)
 			self.ren.ResetCameraClippingRange()
+			self.ui.vtkWidget.GetRenderWindow().Render()
 			return
 
 		switcher = {
@@ -516,10 +545,12 @@ class PyQtDemo(QMainWindow):
 			13 : self.planet_spheres[7],
 			14 : self.planet_spheres[8]
 		}
-		obj_sphere = switcher.get(val)
+
+		self.obj_sphere = switcher.get(val)
 		cam1 = self.ren.GetActiveCamera()
-		cam1.SetFocalPoint(obj_sphere.center)
+		cam1.SetFocalPoint(self.obj_sphere.center)
 		self.ren.ResetCameraClippingRange()
+		self.ui.vtkWidget.GetRenderWindow().Render()
 
 	def orbit_callback(self, val):
 		for i in range(len(self.planet_orbits)):
@@ -534,7 +565,14 @@ class PyQtDemo(QMainWindow):
 			self.asteroid_spheres[i].SetCenter(pos)
 
 		
+		if self.obj_sphere != 0:
+			cam1 = self.ren.GetActiveCamera()
+			cam1.SetFocalPoint(self.obj_sphere.center)
+			self.ren.ResetCameraClippingRange()
+
 		self.ui.vtkWidget.GetRenderWindow().Render()
+
+		
 
 	def scale_release(self, val):
 		self.ui.log.insertPlainText('Scale set to {}\n'.format(val))
@@ -542,10 +580,6 @@ class PyQtDemo(QMainWindow):
 
 	def screenshot_callback(self):
 		save_frame(self.ui.vtkWidget.GetRenderWindow(), self.ui.log)
-
-	def camera_callback(self):
-		print('do nothing right now')
-		print_camera_settings(self.ren.GetActiveCamera(), self.ui.camera_info, self.ui.log)
 
 	def quit_callback(self):
 		sys.exit()
@@ -577,7 +611,6 @@ if __name__=="__main__":
 	window.ui.slider_orbit.sliderMoved.connect(window.orbit_callback)
 	window.ui.obj_focus.currentIndexChanged.connect(window.focus_callback)
 	window.ui.push_screenshot.clicked.connect(window.screenshot_callback)
-	window.ui.push_camera.clicked.connect(window.camera_callback)
 	window.ui.push_quit.clicked.connect(window.quit_callback)
 	window.ui.date_textbox.dateChanged.connect(window.date_callback)
 	sys.exit(app.exec_())
