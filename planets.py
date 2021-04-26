@@ -254,6 +254,7 @@ class Ui_MainWindow(object):
 		#Date Picker
 		self.date_textbox = QDateTimeEdit()
 		self.date_textbox.setCalendarPopup(True)
+		self.date_textbox.setMinimumDate(QDate(2020, 12, 17))
 		self.date_textbox.setMaximumDate(QDate(2050, 12, 31))
 		self.date_textbox.setDate(QDate.currentDate())
 		
