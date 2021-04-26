@@ -120,7 +120,6 @@ class Asteroid():
 		self.node = float(kepler_array[7])
 		self.m = float(kepler_array[8])
 		
-
 class MySphere(VTKPythonAlgorithmBase):
 	def __init__(self):
 		VTKPythonAlgorithmBase.__init__(self,
@@ -177,7 +176,6 @@ class MySphere(VTKPythonAlgorithmBase):
 
 		return 1
 
-
 def save_frame(window, log):
 	global frame_counter
 	global args
@@ -198,7 +196,6 @@ def save_frame(window, log):
 	png_writer.Write()
 	frame_counter += 1
 	log.insertPlainText('Exported {}\n'.format(file_name))
-
 
 def make_sphere(textureFile, center, radius):
 	
@@ -229,7 +226,6 @@ def make_sphere(textureFile, center, radius):
 	triang.SetTexture(texture)
 
 	return triang, sphere_source
-
 
 class Ui_MainWindow(object):
 	def setupUi(self, MainWindow):
@@ -526,6 +522,7 @@ class PyQtDemo(QMainWindow):
 			#cam1.SetPosition(-1195762253824.0, 649975300096.0, -26201048247886.45)
 			cam1.SetFocalPoint(0, 0, 0)
 			cam1.SetViewUp(0,1,0)
+			self.obj_sphere = 0
 			self.ren.ResetCameraClippingRange()
 			self.ui.vtkWidget.GetRenderWindow().Render()
 			return
