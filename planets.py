@@ -23,11 +23,9 @@ import PyQt5.QtCore as QtCore
 from PyQt5.QtCore import Qt
 import vtk
 from vtk.qt.QVTKRenderWindowInteractor import QVTKRenderWindowInteractor
-import argparse
 import sys
 from vtk.util.vtkAlgorithm import VTKPythonAlgorithmBase
 import vtk.util.numpy_support
-import colorbar
 from pytwobodyorbit import TwoBodyOrbit
 import math
 
@@ -343,7 +341,6 @@ class PyQtDemo(QMainWindow):
 			orbit.setOrbKepl(t0, planet.a, planet.e, planet.i, planet.long_node, planet.long_peri,  0)
 			pos, vel = orbit.posvelatt(t0)
 			xs, ys, zs, times = orbit.points(1000)
-			points = vtk.vtkPoints()
 			self.planet_orbits.append(orbit)
 			
 			# Setup the colors array
@@ -353,6 +350,7 @@ class PyQtDemo(QMainWindow):
 
 			colors.InsertNextTypedTuple(color_scale[index])
 			index+=1
+			points = vtk.vtkPoints()
 			#Draw orbit from points
 			for i in range(1000):
 				points.InsertPoint(i, xs[i], ys[i], zs[i])
